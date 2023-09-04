@@ -40,7 +40,9 @@ exports.createSession = async (req, res) => {
 
 exports.getNotDone = async (req, res) => {
   try {
-    const sessions = await Vente.customQuery("SELECT * FROM vente WHERE status != 'payed'");
+    const sessions = await Vente.customQuery(
+      "SELECT * FROM vente WHERE status != 'payed'"
+    );
     return res.status(200).json({ find: true, result: sessions.reverse() });
   } catch (error) {
     return res.status(500).json({ error: true });
@@ -85,9 +87,13 @@ exports.generateBill = async (req, res) => {
     const now2 = moment().utcOffset(1);
 
     const code = now2.format("YYYYMM") + "-" + number;
-    
+
     const now = moment();
-    const totalGeneral = (Number(session[0].total) - Number(session[0].reduction)) + Number(session[0].fraisLivraison)
+
+    const totalGeneral =
+      Number(session[0].total) -
+      Number(session[0].reduction) +
+      Number(session[0].fraisLivraison);
     const data = {
       data: {
         number: code,
@@ -112,6 +118,11 @@ exports.generateBill = async (req, res) => {
           console.log(err);
         } else {
           let options = {
+            childProcessOptions: {
+              env: {
+                OPENSSL_CONF: "/dev/null",
+              },
+            },
             width: "7.5cm",
             localUrlAccess: true,
           };
@@ -134,7 +145,11 @@ exports.generateBill = async (req, res) => {
                     res.status(200).json({ update: true });
                   }
                 );
-                res.status(200).json({ url: `http://147.182.240.60/Invoices/${nameOfFile}`, })
+                res
+                  .status(200)
+                  .json({
+                    url: `http://147.182.240.60/Invoices/${nameOfFile}`,
+                  });
               }
             });
         }
@@ -148,17 +163,29 @@ exports.generateBill = async (req, res) => {
 
 exports.edit = async (req, res) => {
   try {
-    const {taux, livreur, adresse, fraisLivraison} = req.body;
-    const vente = await Vente.find({ id: req.params.id, });
+    const { taux, livreur, adresse, fraisLivraison } = req.body;
+    const vente = await Vente.find({ id: req.params.id });
     if (vente.length === 0) {
-      return res.status(500).json({ error: true, message: "Une erreur inconnu a eu lieu" });
+      return res
+        .status(500)
+        .json({ error: true, message: "Une erreur inconnu a eu lieu" });
     }
-    await Vente.updateOne({ taux: Number(taux), livreur: livreur, adresse: adresse, fraisLivraison: Number(fraisLivraison), }, { id: req.params.id });
-    return res.status(200).json({ update: true, });
+    await Vente.updateOne(
+      {
+        taux: Number(taux),
+        livreur: livreur,
+        adresse: adresse,
+        fraisLivraison: Number(fraisLivraison),
+      },
+      { id: req.params.id }
+    );
+    return res.status(200).json({ update: true });
   } catch (error) {
-    return res.status(500).json({ error: true, message: "Une erreur inconnu a eu lieu" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnu a eu lieu" });
   }
-}
+};
 
 exports.addProduct2Session = async (req, res) => {
   try {
@@ -180,11 +207,14 @@ exports.addProduct2Session = async (req, res) => {
         quantite: Number(req.body.quantite),
       };
       await ProduitVente.insertOne(toInsertProduct);
-      await Vente.updateOne({
-        total:
-          sessionData[0].total +
-          Number(req.body.quantite) * Number(productData[0].prix),
-        }, {id: req.params.id});
+      await Vente.updateOne(
+        {
+          total:
+            sessionData[0].total +
+            Number(req.body.quantite) * Number(productData[0].prix),
+        },
+        { id: req.params.id }
+      );
       return res.status(200).json({ create: true });
     } else if (product[0].quantite > Number(req.body.quantite)) {
       await StockProduit.updateOne(
@@ -201,11 +231,14 @@ exports.addProduct2Session = async (req, res) => {
         quantite: Number(req.body.quantite),
       };
       await ProduitVente.insertOne(toInsertProduct);
-      await Vente.updateOne({
-        total:
-          sessionData[0].total +
-          Number(req.body.quantite) * (productData[0].prix),
-      }, {id: req.params.id});
+      await Vente.updateOne(
+        {
+          total:
+            sessionData[0].total +
+            Number(req.body.quantite) * productData[0].prix,
+        },
+        { id: req.params.id }
+      );
       return res.status(200).json({ create: true });
     } else {
       return res
@@ -222,7 +255,7 @@ exports.addProduct2Session = async (req, res) => {
 
 exports.removeOneProduct = async (req, res) => {
   try {
-    const item = await ProduitVente.find({ id: req.params.id, });
+    const item = await ProduitVente.find({ id: req.params.id });
     if (item.length === 0) {
       return res
         .status(500)
@@ -232,30 +265,39 @@ exports.removeOneProduct = async (req, res) => {
     const produitId = item[0].produitId;
     const quantite = item[0].quantite;
     const prix = item[0].prix;
-    let stockProduit = await StockProduit.find({ stockId: stockId, });
+    let stockProduit = await StockProduit.find({ stockId: stockId });
     let newStockProduit = [];
     for (let index in stockProduit) {
       newStockProduit[index] = stockProduit[index].produitId;
     }
     if (newStockProduit.includes(Number(produitId))) {
       const index = newStockProduit.indexOf(Number(produitId));
-      await StockProduit.updateOne({ quantite: stockProduit[index].quantite + Number(quantite), }, { id: stockProduit[index].id, });
+      await StockProduit.updateOne(
+        { quantite: stockProduit[index].quantite + Number(quantite) },
+        { id: stockProduit[index].id }
+      );
       await ProduitVente.deleteOne({ id: req.params.id });
-      const vente = await Vente.find({ id: item[0].venteId, });
-      await Vente.updateOne({ total: vente[0].total - (prix * quantite) }, { id: item[0].venteId })
-      return res.status(200).json({ delete: true, });
+      const vente = await Vente.find({ id: item[0].venteId });
+      await Vente.updateOne(
+        { total: vente[0].total - prix * quantite },
+        { id: item[0].venteId }
+      );
+      return res.status(200).json({ delete: true });
     } else {
       let toInsert = {
         stockId: Number(stockId),
         produitId: Number(produitId),
         quantite: Number(quantite),
-      }
+      };
 
       await StockProduit.insertOne(toInsert);
       await ProduitVente.deleteOne({ id: req.params.id });
-      const vente = await Vente.find({ id: item[0].venteId, });
-      await Vente.updateOne({ total: vente[0].total - (prix * quantite) }, { id: item[0].venteId })
-      return res.status(200).json({ delete: true, });
+      const vente = await Vente.find({ id: item[0].venteId });
+      await Vente.updateOne(
+        { total: vente[0].total - prix * quantite },
+        { id: item[0].venteId }
+      );
+      return res.status(200).json({ delete: true });
     }
   } catch (error) {
     console.log(error);
@@ -263,28 +305,34 @@ exports.removeOneProduct = async (req, res) => {
       .status(500)
       .json({ error: true, message: "Une erreur inconnue a eu lieu," });
   }
-}
+};
 
 exports.changePrice = async (req, res) => {
   try {
-    const item = await ProduitVente.find({ id: req.params.id, });
+    const item = await ProduitVente.find({ id: req.params.id });
     if (item.length === 0) {
       return res
         .status(500)
         .json({ error: true, message: "Une erreur inconnue a eu lieu," });
     }
-    await ProduitVente.updateOne({ prix: req.body.price, }, { id: req.params.id, });
-    const sum = await ProduitVente.customQuery("SELECT SUM(quantite * prix) as sum FROM produitVente WHERE venteId = ?", [item[0].venteId]);
+    await ProduitVente.updateOne(
+      { prix: req.body.price },
+      { id: req.params.id }
+    );
+    const sum = await ProduitVente.customQuery(
+      "SELECT SUM(quantite * prix) as sum FROM produitVente WHERE venteId = ?",
+      [item[0].venteId]
+    );
 
-    await Vente.updateOne({ total: sum[0].sum }, { id: item[0].venteId })
-    return res.status(200).json({ update: true, });
+    await Vente.updateOne({ total: sum[0].sum }, { id: item[0].venteId });
+    return res.status(200).json({ update: true });
   } catch (error) {
     console.log(error);
     return res
       .status(500)
       .json({ error: true, message: "Une erreur inconnue a eu lieu," });
   }
-}
+};
 
 exports.changeStatus = async (req, res) => {
   try {
@@ -303,9 +351,11 @@ exports.changeStatus = async (req, res) => {
         nextStatus = "payed";
         break;
     }
-    await Vente.updateOne({ status: nextStatus, }, { id: req.params.id });
-    return res.status(200).json({ update: true, });
+    await Vente.updateOne({ status: nextStatus }, { id: req.params.id });
+    return res.status(200).json({ update: true });
   } catch (error) {
-    return res.status(500).json({ error: true, message: "Une erreur inconnue a eu lieu" });
+    return res
+      .status(500)
+      .json({ error: true, message: "Une erreur inconnue a eu lieu" });
   }
-}
+};
