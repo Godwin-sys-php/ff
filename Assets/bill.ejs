@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      h1 {
+        text-align: center;
+        padding-top: 75px;
+      }
+      h2,
+      h3 {
+        margin-top: -8px;
+        text-align: center;
+      }
+      hr {
+        background-color: black;
+        border-color: black;
+      }
+      .content {
+        font-size: 25px;
+        margin-right: 75px;
+        margin-left: 75px;
+      }
+      .item {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        border: solid 1px black;
+      }
+      .item-element {
+        border: solid 1px black;
+        text-align: right;
+      }
+      .item-element-name {
+        border: solid 1px black;
+        text-align: left;
+      }
+      .bref {
+        text-align: right;
+        border-collapse: collapse;
+        width: 80%;
+        border-bottom: dashed 1px black;
+      }
+      .total {
+        width: 100%;
+        float: none;
+      }
+      .align-right {
+        text-align: right;
+      }
+      .address {
+        text-align: left;
+        margin-right: 75px;
+        margin-left: 75px;
+        font-size: 17px;
+      }
+      .info {
+        font-size: 20.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>FR&SH FOOD</h1>
+    <div class="address">
+      ZUGA BUSINESS SARLU 
+      <br />
+      RCCM: 23-B-02338 
+      <br />
+      ID NAT: 01-F4300-N29968S
+      <br />
+      KINSHASA-RDC
+    </div>
+    <br />
+    <br />
+    <h2>FACTURE N°: <%= data.number %></h2>
+    <div class="content">
+      <div class="info">
+        DATE <%= data.date %> <br />
+        CLIENT <%= data.client %> <br />
+        LIVREUR <%= data.livreur %> <br />
+        ADRESSE <%= data.adresse %> <br />
+      </div>
+      <br />
+      <table class="item">
+        <tr>
+          <th>ARTICLE</th>
+          <th>QTÉ</th>
+          <th>PU</th>
+          <th>PT</th>
+        </tr>
+        <% data.item.forEach(item => { %>
+          <tr>
+            <td class="item-element-name"><%= item.name %></td>
+            <td class="item-element"><%= item.quantite %></td>
+            <td class="item-element"><%= item.prix %>000 Fc</td>
+            <td class="item-element"><%= item.prix * item.quantite %>000 Fc</td>
+          </tr>
+        <% }); %>
+      </table>
+      <br />
+      <table class="bref" align="right">
+        <tr>
+          <td>TOTAL&nbsp;&nbsp;</td>
+          <td><%= data.total %> Fc</td>
+        </tr>
+        <tr>
+          <td>LIVRAISON&nbsp;&nbsp;</td>
+          <td><%= data.fees %> Fc</td>
+        </tr>
+        <tr>
+          <td>REMISE&nbsp;&nbsp;</td>
+          <td><%= data.reduction %> Fc</td>
+        </tr>
+        <tr>
+          <td>TVA&nbsp;&nbsp;</td>
+          <td>0</td>
+        </tr>
+      </table>
+      <br /><br /><br />
+      <br /><br /><br />
+      <br />
+      <table class="total">
+        <tr>
+          <td>TOTAL GÉNÉRAL</td>
+          <td class="align-right"><%= data.totalGeneral %> Fc</td>
+        </tr>
+        <tr>
+          <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+          <td class="align-right"><%= data.dollar %> $</td>
+        </tr>
+      </table>
+      <br />
+      <hr />
+      <br /><br />
+      <br /><br />
+    </div>
+  </body>
+</html>
